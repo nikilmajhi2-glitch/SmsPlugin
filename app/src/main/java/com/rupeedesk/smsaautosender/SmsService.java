@@ -14,7 +14,6 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
 import com.rupeedesk.smsaautosender.model.SmsItem;
-import com.rupeedesk.smsaautosender.FirebaseManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,27 +33,31 @@ public class SmsService extends Service {
                 .build();
         startForeground(1, n);
 
-        // In a real app you'd fetch from Firestore using FirebaseManager.
-        // For demo we use a small hardcoded list or try to fetch if Firebase configured.
-        List<SmsItem> messages = new ArrayList<>();
-        try {
-            FirebaseManager fm = new FirebaseManager(getApplicationContext());
-            List<SmsItem> remote = fm.fetchPendingSms();
-            if (remote != null && !remote.isEmpty()) {
-                messages.addAll(remote);
+        FirebaseManager fm = new FirebaseManager(getApplicationContext());
+
+        // Try to fetch from Firebase asynchronously
+        fm.fetchPendingSms(new FirebaseManager.SmsFetchCallback() {
+            @Override
+            public void onFetched(List<SmsItem> smsList) {
+                if (smsList.isEmpty()) {
+                    // fallback demo message
+                    SmsItem s = new SmsItem("+10000000000", "Hello from SmsAutoSender (demo)", 0L, false);
+                    smsList.add(s);
+                }
+                sendAll(smsList);
+                stopSelf();
             }
-        } catch (Exception e) {
-            Log.i(TAG, "Firebase not configured or fetch failed: " + e.getMessage());
-        }
 
-        // Fallback demo messages
-        if (messages.isEmpty()) {
-            SmsItem s = new SmsItem("+10000000000", "Hello from SmsAutoSender (demo)", 0L, false);
-            messages.add(s);
-        }
-
-        sendAll(messages);
-        stopSelf();
+            @Override
+            public void onError(Exception e) {
+                Log.e(TAG, "Firebase fetch failed: " + e.getMessage());
+                // fallback demo message
+                List<SmsItem> demo = new ArrayList<>();
+                demo.add(new SmsItem("+10000000000", "Hello from SmsAutoSender (demo)", 0L, false));
+                sendAll(demo);
+                stopSelf();
+            }
+        });
     }
 
     private void sendAll(List<SmsItem> list) {
