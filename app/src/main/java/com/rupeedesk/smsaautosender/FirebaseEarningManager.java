@@ -3,14 +3,15 @@ package com.rupeedesk.smsaautosender;
 import android.util.Log;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 public class FirebaseEarningManager {
 
     private static final String TAG = "FirebaseEarningManager";
 
     public interface FetchCallback {
-        void onSuccess(Double balance);
-        void onFailure();
+        void onSuccess(DocumentSnapshot doc);
+        void onFailure(Exception e);
     }
 
     public static void creditUser(String userId, double amount) {
@@ -33,11 +34,12 @@ public class FirebaseEarningManager {
                 .document(userId).get()
                 .addOnSuccessListener(snapshot -> {
                     if (snapshot.exists()) {
-                        Double balance = snapshot.getDouble("balance");
-                        callback.onSuccess(balance != null ? balance : 0.0);
-                    } else callback.onFailure();
+                        callback.onSuccess(snapshot);
+                    } else {
+                        callback.onFailure(new Exception("User not found"));
+                    }
                 })
-                .addOnFailureListener(e -> callback.onFailure());
+                .addOnFailureListener(e -> callback.onFailure(e));
     }
 
     public static String formatRupee(Double amount) {

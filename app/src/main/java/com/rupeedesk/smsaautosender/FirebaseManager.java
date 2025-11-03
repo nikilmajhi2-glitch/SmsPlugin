@@ -3,7 +3,6 @@ package com.rupeedesk.smsaautosender;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
-
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
