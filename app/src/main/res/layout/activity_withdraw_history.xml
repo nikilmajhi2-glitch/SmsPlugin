@@ -4,17 +4,11 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
-    <EditText
-        android:id="@+id/etAmount"
+    <ListView
+        android:id="@+id/listWithdrawHistory"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Enter amount" />
-
-    <Button
-        android:id="@+id/btnSubmit"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/etAmount"
-        android:layout_marginTop="16dp"
-        android:text="Submit" />
+        android:layout_height="match_parent"
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="1dp"
+        android:listSelector="@android:color/transparent" />
 </RelativeLayout>

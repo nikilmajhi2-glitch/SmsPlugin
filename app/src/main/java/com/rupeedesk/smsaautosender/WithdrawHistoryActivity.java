@@ -17,7 +17,7 @@ public class WithdrawHistoryActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_withdraw_history);
+        setContentView(R.layout.activity_withdraw_history); // Ensure this matches your layout file name
 
         listView = findViewById(R.id.listWithdrawHistory);
 
