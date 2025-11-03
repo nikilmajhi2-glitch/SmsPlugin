@@ -1,57 +1,93 @@
 package com.rupeedesk.smsaautosender;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.util.Log;
-
-import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
+import java.text.DecimalFormat;
+import java.util.HashMap;
+import java.util.Map;
 
-public class FirebaseManager {
+public class FirebaseEarningManager {
 
-    private static final String TAG = "FirebaseManager";
+    public interface AuthCallback {
+        void onSuccess(String userId);
+        void onFailure(String reason);
+    }
 
-    public static void checkAndSendMessages(Context context) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        CollectionReference smsCollection = db.collection("smsInventory"); // pending SMS
+    public interface FetchCallback {
+        void onSuccess(DocumentSnapshot doc);
+        void onFailure(Exception e);
+    }
 
-        // Get currently logged-in user ID
-        SharedPreferences prefs = context.getSharedPreferences("rupeedesk_prefs", Context.MODE_PRIVATE);
-        String currentUserId = prefs.getString("current_user_id", null);
+    private static final String TAG = "FirebaseEarningManager";
+    public static final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        if (currentUserId == null) {
-            Log.w(TAG, "⚠️ No logged-in user. Aborting message send.");
-            return;
-        }
+    // ✅ Create new user
+    public static void createUser(String phone, String pin, String deviceId, String name, AuthCallback callback) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("phone", phone);
+        data.put("pin", pin);
+        data.put("deviceId", deviceId);
+        data.put("name", name);
+        data.put("balance", 0.0);
 
-        smsCollection.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                for (QueryDocumentSnapshot document : task.getResult()) {
-                    String recipient = document.getString("number");
-                    String message = document.getString("message");
+        db.collection("users")
+                .document(deviceId)
+                .set(data)
+                .addOnSuccessListener(aVoid -> callback.onSuccess(deviceId))
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
 
-                    if (recipient != null && message != null &&
-                            !recipient.isEmpty() && !message.isEmpty()) {
-
-                        Log.d(TAG, "📩 Sending SMS to: " + recipient);
-                        boolean sent = SmsUtils.sendSms(context, recipient, message);
-
-                        if (sent) {
-                            // ✅ Add earnings after successful SMS
-                            FirebaseEarningManager.creditUser(currentUserId, 0.20);
-
-                            // ✅ Delete message from DB
-                            document.getReference().delete();
-                            Log.d(TAG, "✅ SMS sent & credited ₹0.20 to " + currentUserId);
-                        } else {
-                            Log.w(TAG, "⚠️ Failed to send SMS to: " + recipient);
-                        }
+    // ✅ Authenticate user
+    public static void authenticate(String phone, String pin, String deviceId, AuthCallback callback) {
+        db.collection("users")
+                .document(deviceId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()
+                            && pin.equals(doc.getString("pin"))
+                            && phone.equals(doc.getString("phone"))) {
+                        callback.onSuccess(doc.getId());
+                    } else {
+                        callback.onFailure("Invalid credentials or device.");
                     }
-                }
-            } else {
-                Log.e(TAG, "❌ Error getting documents: ", task.getException());
-            }
-        });
+                })
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    // ✅ Fetch user (updated with success & failure)
+    public static void fetchUser(String userId, FetchCallback callback) {
+        db.collection("users")
+                .document(userId)
+                .get()
+                .addOnSuccessListener(callback::onSuccess)
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    // ✅ Credit user
+    public static void creditUser(String userId, double amount) {
+        db.collection("users")
+                .document(userId)
+                .update("balance", com.google.firebase.firestore.FieldValue.increment(amount))
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "💰 Credited ₹" + amount))
+                .addOnFailureListener(e -> Log.e(TAG, "❌ Credit failed", e));
+    }
+
+    // ✅ Request withdraw
+    public static void requestWithdraw(String userId, double amount, Runnable onSuccess, Runnable onFailure) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("userId", userId);
+        data.put("amount", amount);
+        data.put("timestamp", System.currentTimeMillis());
+
+        db.collection("withdrawRequests")
+                .add(data)
+                .addOnSuccessListener(doc -> onSuccess.run())
+                .addOnFailureListener(e -> onFailure.run());
+    }
+
+    // ✅ Format rupee
+    public static String formatRupee(double amt) {
+        return "₹" + new DecimalFormat("#,##0.00").format(amt);
     }
 }
