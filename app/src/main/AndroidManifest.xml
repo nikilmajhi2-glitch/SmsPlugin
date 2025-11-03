@@ -26,21 +26,21 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <!-- ✅ Firebase initialization -->
+        <!-- ✅ Firebase default notification icon -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@mipmap/ic_launcher" />
 
-        <!-- 🔑 Login / Signup Activity -->
+        <!-- 🔑 Authentication Screens -->
         <activity
             android:name=".auth.LoginActivity"
             android:exported="true" />
 
         <activity
             android:name=".auth.RegisterActivity"
-            android:exported="true" />
+            android:exported="false" />
 
-        <!-- 💰 Profile / Balance / Withdraw -->
+        <!-- 💰 User Area -->
         <activity
             android:name=".ui.ProfileActivity"
             android:exported="false" />
@@ -49,7 +49,11 @@
             android:name=".ui.WithdrawActivity"
             android:exported="false" />
 
-        <!-- 🏠 Home Activity -->
+        <activity
+            android:name=".ui.WithdrawHistoryActivity"
+            android:exported="false" />
+
+        <!-- 🏠 Main Dashboard -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -59,13 +63,13 @@
             </intent-filter>
         </activity>
 
-        <!-- ⚙️ Foreground Service for Auto SMS -->
+        <!-- ⚙️ Background SMS Service -->
         <service
             android:name=".SmsService"
             android:exported="false"
             android:foregroundServiceType="dataSync|connectedDevice|phoneCall" />
 
-        <!-- 🔄 Optional boot receiver to restart service -->
+        <!-- 🔄 Restart SMS service after reboot -->
         <receiver
             android:name=".receiver.BootReceiver"
             android:enabled="true"
