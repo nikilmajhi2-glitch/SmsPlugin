@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.rupeedesk.smsaautosender">
 
-    <!-- PERMISSIONS -->
+    <!-- 📱 Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.READ_SMS" />
@@ -25,21 +26,54 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <!-- Main Activity -->
+        <!-- ✅ Firebase initialization -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+
+        <!-- 🔑 Login / Signup Activity -->
+        <activity
+            android:name=".auth.LoginActivity"
+            android:exported="true" />
+
+        <activity
+            android:name=".auth.RegisterActivity"
+            android:exported="true" />
+
+        <!-- 💰 Profile / Balance / Withdraw -->
+        <activity
+            android:name=".ui.ProfileActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.WithdrawActivity"
+            android:exported="false" />
+
+        <!-- 🏠 Home Activity -->
         <activity
             android:name=".MainActivity"
-            android:exported="true"> <!-- REQUIRED for Android 12+ -->
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Foreground SMS Sending Service -->
+        <!-- ⚙️ Foreground Service for Auto SMS -->
         <service
             android:name=".SmsService"
             android:exported="false"
             android:foregroundServiceType="dataSync|connectedDevice|phoneCall" />
+
+        <!-- 🔄 Optional boot receiver to restart service -->
+        <receiver
+            android:name=".receiver.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 </manifest>
