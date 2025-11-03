@@ -19,7 +19,6 @@ public class WithdrawHistoryActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_withdraw_history);
 
-        // ✅ Fixed ID to match your XML
         listView = findViewById(R.id.listWithdrawHistory);
 
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, withdraws);
@@ -34,7 +33,6 @@ public class WithdrawHistoryActivity extends AppCompatActivity {
         if (userId == null) return;
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        // ✅ Fixed collection name to match FirebaseEarningManager
         db.collection("withdrawRequests")
                 .whereEqualTo("userId", userId)
                 .get()
