@@ -19,11 +19,14 @@ public class SmsService extends Service {
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
+
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("SMS Auto Sender")
-                .setContentText("Service Running... Checking Firestore for messages")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentText("Send Service Running")
+                .setSmallIcon(android.R.drawable.ic_dialog_info) // ✅ fixed icon
+                .setOngoing(true)
                 .build();
+
         startForeground(1, notification);
 
         isRunning = true;
@@ -41,7 +44,7 @@ public class SmsService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_STICKY; // keeps service alive
+        return START_STICKY; // ✅ Keeps service alive after app cleared
     }
 
     @Override
@@ -64,7 +67,9 @@ public class SmsService extends Service {
                     NotificationManager.IMPORTANCE_LOW
             );
             NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(serviceChannel);
+            if (manager != null) {
+                manager.createNotificationChannel(serviceChannel);
+            }
         }
     }
 }
