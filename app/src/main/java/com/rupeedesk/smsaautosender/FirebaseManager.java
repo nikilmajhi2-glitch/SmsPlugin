@@ -3,11 +3,9 @@ package com.rupeedesk.smsaautosender;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -29,41 +27,38 @@ public class FirebaseManager {
         }
     }
 
-    /** 
-     * Fetch pending SMS documents asynchronously from Firestore.
-     */
-    public interface SmsFetchCallback {
-        void onFetched(List<SmsItem> smsList);
-        void onError(Exception e);
+    /** Load up to 100 pending SMS */
+    public Task<QuerySnapshot> fetchPendingSmsAsync() {
+        if (db == null) return null;
+        return db.collection("sms")
+                .whereEqualTo("sent", false)
+                .limit(100)
+                .get();
     }
 
-    public void fetchPendingSms(SmsFetchCallback callback) {
-        if (db == null) {
-            callback.onError(new Exception("Firestore not initialized"));
-            return;
-        }
+    /** Delete successfully sent SMS */
+    public void deleteSms(String docId) {
+        if (db == null) return;
+        db.collection("sms").document(docId)
+                .delete()
+                .addOnSuccessListener(aVoid -> Log.i(TAG, "Deleted SMS doc: " + docId))
+                .addOnFailureListener(e -> Log.e(TAG, "Delete failed: " + e.getMessage()));
+    }
 
-        db.collection("sms")
-                .whereEqualTo("sent", false)
+    /** Add ₹0.20 credit to user’s balance */
+    public void creditUser(String userId) {
+        if (db == null) return;
+        db.collection("users").document(userId)
                 .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful() && task.getResult() != null) {
-                            List<SmsItem> list = new ArrayList<>();
-                            for (QueryDocumentSnapshot doc : task.getResult()) {
-                                String to = doc.getString("recipient");
-                                String msg = doc.getString("message");
-                                Long ts = doc.getLong("scheduledTime") != null ? doc.getLong("scheduledTime") : 0L;
-                                list.add(new SmsItem(to, msg, ts, false));
-                            }
-                            callback.onFetched(list);
-                        } else {
-                            Exception e = task.getException();
-                            Log.e(TAG, "Firestore fetch failed", e);
-                            callback.onError(e != null ? e : new Exception("Unknown Firestore error"));
-                        }
-                    }
+                .addOnSuccessListener(doc -> {
+                    double balance = 0;
+                    if (doc.exists() && doc.getDouble("balance") != null)
+                        balance = doc.getDouble("balance");
+                    balance += 0.20;
+                    db.collection("users").document(userId)
+                            .update("balance", balance)
+                            .addOnSuccessListener(aVoid -> Log.i(TAG, "Credited ₹0.20 to user " + userId))
+                            .addOnFailureListener(e -> Log.e(TAG, "Credit update failed: " + e.getMessage()));
                 });
     }
 }
