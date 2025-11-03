@@ -30,14 +30,18 @@
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@mipmap/ic_launcher" />
 
-        <!-- 🔑 Authentication Screens -->
-        <activity android:name=".LoginActivity" android:exported="true" />
-        <activity android:name=".RegisterActivity" android:exported="false" />
+        <!-- 🔑 Authentication -->
+        <activity
+            android:name=".LoginActivity"
+            android:exported="true" />
 
         <!-- 💰 User Area -->
-        <activity android:name=".ProfileActivity" android:exported="false" />
-        <activity android:name=".WithdrawActivity" android:exported="false" />
-        <activity android:name=".WithdrawHistoryActivity" android:exported="false" />
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".WithdrawHistoryActivity"
+            android:exported="false" />
 
         <!-- 🏠 Main Dashboard -->
         <activity

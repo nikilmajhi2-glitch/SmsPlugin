@@ -1,11 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:padding="16dp" android:layout_width="match_parent" android:layout_height="match_parent">
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center_horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    <TextView android:text="Home" android:textSize="20sp" />
-    <TextView android:id="@+id/tvBalance" android:text="₹0.00" android:textSize="18sp" android:layout_marginTop="12dp"/>
-    <TextView android:id="@+id/tvStatus" android:text="Status: idle" android:layout_marginTop="8dp"/>
-    <Button android:id="@+id/btnStart" android:text="Start SMS Task" android:layout_marginTop="16dp"/>
-    <Button android:id="@+id/btnProfile" android:text="Profile" android:layout_marginTop="8dp"/>
-    <Button android:id="@+id/btnLogout" android:text="Logout" android:layout_marginTop="8dp"/>
+    <TextView
+        android:text="Home"
+        android:textSize="22sp"
+        android:layout_marginBottom="12dp"/>
+
+    <TextView
+        android:id="@+id/tvBalance"
+        android:text="Balance: ₹0.00"
+        android:textSize="18sp"
+        android:layout_marginTop="8dp"/>
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:text="Status: idle"
+        android:layout_marginTop="8dp"/>
+
+    <Button
+        android:id="@+id/btnStart"
+        android:text="Start SMS Task"
+        android:layout_marginTop="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnProfile"
+        android:text="Profile"
+        android:layout_marginTop="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnLogout"
+        android:text="Logout"
+        android:layout_marginTop="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 </LinearLayout>

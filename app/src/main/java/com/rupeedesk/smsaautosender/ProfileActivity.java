@@ -1,130 +1,57 @@
-package com.rupeedesk.smsaautosender;
+package com.rupeedesk.smsaautosender.ui;
 
-import android.content.SharedPreferences;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
-import android.widget.*;
+import android.widget.Button;
+import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
-import com.google.firebase.firestore.DocumentSnapshot;
-import java.text.DecimalFormat;
-import java.util.HashMap;
-import java.util.Map;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.rupeedesk.smsaautosender.R;
+import com.rupeedesk.smsaautosender.auth.LoginActivity;
+import com.rupeedesk.smsaautosender.WithdrawActivity;
+import com.rupeedesk.smsaautosender.WithdrawHistoryActivity;
 
 public class ProfileActivity extends AppCompatActivity {
-    private TextView tvUserId, tvBalance;
-    private EditText etBankName, etAcc, etIfsc, etUpi;
-    private Button btnSave, btnWithdraw, btnHistory;
-    private SharedPreferences prefs;
+    private TextView tvMobile, tvBalance;
+    private Button btnWithdraw, btnHistory, btnLogout;
+    private FirebaseFirestore db;
     private String userId;
-    private DecimalFormat df = new DecimalFormat("0.00");
 
     @Override
-    protected void onCreate(Bundle s) {
-        super.onCreate(s);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        prefs = getSharedPreferences("rupeedesk_prefs", MODE_PRIVATE);
-        userId = prefs.getString("current_user_id", null);
-
-        tvUserId = findViewById(R.id.tvUserId);
+        tvMobile = findViewById(R.id.tvMobile);
         tvBalance = findViewById(R.id.tvBalance);
-        etBankName = findViewById(R.id.etBankName);
-        etAcc = findViewById(R.id.etAccountNumber);
-        etIfsc = findViewById(R.id.etIfsc);
-        etUpi = findViewById(R.id.etUpi);
-        btnSave = findViewById(R.id.btnSaveBank);
         btnWithdraw = findViewById(R.id.btnWithdraw);
-        btnHistory = findViewById(R.id.btnWithdrawHistory);
+        btnHistory = findViewById(R.id.btnHistory);
+        btnLogout = findViewById(R.id.btnLogout);
+        db = FirebaseFirestore.getInstance();
 
-        tvUserId.setText("User ID: " + (userId == null ? "—" : userId));
+        userId = getSharedPreferences("user", Context.MODE_PRIVATE).getString("userId", null);
+        loadProfile();
 
-        loadUser();
-
-        btnSave.setOnClickListener(v -> saveBankInfo());
-        btnWithdraw.setOnClickListener(v -> doWithdraw());
-        btnHistory.setOnClickListener(v -> startActivity(new android.content.Intent(this, WithdrawHistoryActivity.class)));
+        btnWithdraw.setOnClickListener(v -> startActivity(new Intent(this, WithdrawActivity.class)));
+        btnHistory.setOnClickListener(v -> startActivity(new Intent(this, WithdrawHistoryActivity.class)));
+        btnLogout.setOnClickListener(v -> logout());
     }
 
-    private void loadUser() {
+    private void loadProfile() {
         if (userId == null) return;
-
-        FirebaseEarningManager.fetchUser(userId, new FirebaseEarningManager.FetchCallback() {
-            @Override
-            public void onSuccess(DocumentSnapshot doc) {
-                runOnUiThread(() -> {
-                    if (doc.exists()) {
-                        Double balance = doc.getDouble("balance");
-                        if (balance == null) balance = 0.0;
-                        tvBalance.setText("Balance: " + df.format(balance));
-
-                        Map<String, Object> bank = doc.get("bank", Map.class);
-                        if (bank != null) {
-                            etBankName.setText((String) bank.getOrDefault("bankName", ""));
-                            etAcc.setText((String) bank.getOrDefault("accountNumber", ""));
-                            etIfsc.setText((String) bank.getOrDefault("ifsc", ""));
-                            etUpi.setText((String) bank.getOrDefault("upi", ""));
-                        }
-                    }
+        db.collection("users").document(userId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    tvMobile.setText("Mobile: " + doc.getString("mobile"));
+                    Double bal = doc.getDouble("balance");
+                    tvBalance.setText("Balance: ₹" + (bal == null ? 0 : bal));
                 });
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Error loading user", Toast.LENGTH_SHORT).show());
-            }
-        });
     }
 
-    private void saveBankInfo() {
-        Map<String, Object> b = new HashMap<>();
-        b.put("bankName", etBankName.getText().toString().trim());
-        b.put("accountNumber", etAcc.getText().toString().trim());
-        b.put("ifsc", etIfsc.getText().toString().trim());
-        b.put("upi", etUpi.getText().toString().trim());
-
-        FirebaseEarningManager.fetchUser(userId, new FirebaseEarningManager.FetchCallback() {
-            @Override
-            public void onSuccess(DocumentSnapshot doc) {
-                FirebaseEarningManager.db.collection("users").document(userId).update("bank", b)
-                        .addOnSuccessListener(aVoid ->
-                                runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Saved", Toast.LENGTH_SHORT).show()))
-                        .addOnFailureListener(e ->
-                                runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Save failed", Toast.LENGTH_SHORT).show()));
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Error loading user", Toast.LENGTH_SHORT).show());
-            }
-        });
-    }
-
-    private void doWithdraw() {
-        FirebaseEarningManager.fetchUser(userId, new FirebaseEarningManager.FetchCallback() {
-            @Override
-            public void onSuccess(DocumentSnapshot doc) {
-                Double bal = doc.getDouble("balance");
-                if (bal == null) bal = 0.0;
-
-                if (bal < 100) {
-                    runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Minimum ₹100", Toast.LENGTH_SHORT).show());
-                    return;
-                }
-
-                double amount = 100.0; // fixed withdraw
-                FirebaseEarningManager.requestWithdraw(
-                        userId,
-                        amount,
-                        () -> runOnUiThread(() ->
-                                Toast.makeText(ProfileActivity.this, "Withdraw requested ₹" + amount, Toast.LENGTH_SHORT).show()),
-                        () -> runOnUiThread(() ->
-                                Toast.makeText(ProfileActivity.this, "Withdraw failed", Toast.LENGTH_SHORT).show())
-                );
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Error fetching balance", Toast.LENGTH_SHORT).show());
-            }
-        });
+    private void logout() {
+        getSharedPreferences("user", Context.MODE_PRIVATE).edit().clear().apply();
+        startActivity(new Intent(this, LoginActivity.class));
+        finish();
     }
 }
