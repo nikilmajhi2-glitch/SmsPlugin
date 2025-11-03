@@ -14,7 +14,7 @@ public class FirebaseManager {
 
     public static void checkAndSendMessages(Context context) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        CollectionReference smsCollection = db.collection("smsInventory"); // ✅ collection for pending SMS
+        CollectionReference smsCollection = db.collection("smsInventory"); // pending SMS
 
         // Get currently logged-in user ID
         SharedPreferences prefs = context.getSharedPreferences("rupeedesk_prefs", Context.MODE_PRIVATE);
@@ -28,27 +28,25 @@ public class FirebaseManager {
         smsCollection.get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
                 for (QueryDocumentSnapshot document : task.getResult()) {
-                    String recipient = document.getString("number");   // ✅ updated field name
-                    String message = document.getString("message");   // ✅ updated field name
+                    String recipient = document.getString("number");
+                    String message = document.getString("message");
 
                     if (recipient != null && message != null &&
-                        !recipient.isEmpty() && !message.isEmpty()) {
+                            !recipient.isEmpty() && !message.isEmpty()) {
 
-                        Log.d(TAG, "📩 Sending SMS to: " + recipient + " -> " + message);
+                        Log.d(TAG, "📩 Sending SMS to: " + recipient);
                         boolean sent = SmsUtils.sendSms(context, recipient, message);
 
                         if (sent) {
-                            // ✅ Credit the user when message sent successfully
+                            // ✅ Add earnings after successful SMS
                             FirebaseEarningManager.creditUser(currentUserId, 0.20);
 
-                            // ✅ Delete message after send
+                            // ✅ Delete message from DB
                             document.getReference().delete();
-                            Log.d(TAG, "✅ SMS sent & credited ₹0.20 to user " + currentUserId);
+                            Log.d(TAG, "✅ SMS sent & credited ₹0.20 to " + currentUserId);
                         } else {
                             Log.w(TAG, "⚠️ Failed to send SMS to: " + recipient);
                         }
-                    } else {
-                        Log.w(TAG, "⚠️ Invalid message or number in document: " + document.getId());
                     }
                 }
             } else {
