@@ -31,30 +31,17 @@
             android:resource="@mipmap/ic_launcher" />
 
         <!-- 🔑 Authentication Screens -->
-        <activity
-            android:name=".auth.LoginActivity"
-            android:exported="true" />
-
-        <activity
-            android:name=".auth.RegisterActivity"
-            android:exported="false" />
+        <activity android:name=".LoginActivity" android:exported="true" />
+        <activity android:name=".RegisterActivity" android:exported="false" />
 
         <!-- 💰 User Area -->
-        <activity
-            android:name=".ui.ProfileActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".ui.WithdrawActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".ui.WithdrawHistoryActivity"
-            android:exported="false" />
+        <activity android:name=".ProfileActivity" android:exported="false" />
+        <activity android:name=".WithdrawActivity" android:exported="false" />
+        <activity android:name=".WithdrawHistoryActivity" android:exported="false" />
 
         <!-- 🏠 Main Dashboard -->
         <activity
-            android:name=".MainActivity"
+            android:name=".HomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -70,7 +57,7 @@
 
         <!-- 🔄 Restart SMS service after reboot -->
         <receiver
-            android:name=".receiver.BootReceiver"
+            android:name=".BootReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
