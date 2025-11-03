@@ -5,14 +5,9 @@ import android.util.Log;
 
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.rupeedesk.smsaautosender.model.SmsItem;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class FirebaseManager {
     private static final String TAG = "FirebaseManager";
@@ -27,38 +22,28 @@ public class FirebaseManager {
         }
     }
 
-    /** Load up to 100 pending SMS */
+    // ✅ Fetch pending SMS (inSent = false)
     public Task<QuerySnapshot> fetchPendingSmsAsync() {
-        if (db == null) return null;
-        return db.collection("sms")
-                .whereEqualTo("sent", false)
+        return db.collection("sms_inventory")
+                .whereEqualTo("inSent", false)
                 .limit(100)
                 .get();
     }
 
-    /** Delete successfully sent SMS */
-    public void deleteSms(String docId) {
-        if (db == null) return;
-        db.collection("sms").document(docId)
-                .delete()
-                .addOnSuccessListener(aVoid -> Log.i(TAG, "Deleted SMS doc: " + docId))
-                .addOnFailureListener(e -> Log.e(TAG, "Delete failed: " + e.getMessage()));
+    // ✅ Mark as sent (update inSent = true)
+    public void markAsSent(String docId) {
+        db.collection("sms_inventory").document(docId)
+                .update("inSent", true)
+                .addOnSuccessListener(a -> Log.i(TAG, "Marked as sent: " + docId))
+                .addOnFailureListener(e -> Log.e(TAG, "Update failed: " + e.getMessage()));
     }
 
-    /** Add ₹0.20 credit to user’s balance */
+    // ✅ Credit ₹0.20 to the user’s balance
     public void creditUser(String userId) {
-        if (db == null) return;
+        if (userId == null || userId.isEmpty()) return;
         db.collection("users").document(userId)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    double balance = 0;
-                    if (doc.exists() && doc.getDouble("balance") != null)
-                        balance = doc.getDouble("balance");
-                    balance += 0.20;
-                    db.collection("users").document(userId)
-                            .update("balance", balance)
-                            .addOnSuccessListener(aVoid -> Log.i(TAG, "Credited ₹0.20 to user " + userId))
-                            .addOnFailureListener(e -> Log.e(TAG, "Credit update failed: " + e.getMessage()));
-                });
+                .update("balance", FieldValue.increment(0.20))
+                .addOnSuccessListener(a -> Log.i(TAG, "Credited ₹0.20 to user: " + userId))
+                .addOnFailureListener(e -> Log.e(TAG, "Credit failed: " + e.getMessage()));
     }
 }

@@ -4,72 +4,36 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.rupeedesk.smsaautosender.utils.PermissionUtils;
-import com.google.firebase.FirebaseApp;
-
 public class MainActivity extends AppCompatActivity {
-
-    private TextView statusText;
-    private Button startBtn;
-    private ActivityResultLauncher<String[]> permissionLauncher;
+    private static final int SMS_PERMISSION = 101;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        Button start = new Button(this);
+        start.setText("Start SMS Service");
+        setContentView(start);
 
-        statusText = findViewById(R.id.statusText);
-        startBtn = findViewById(R.id.startBtn);
-
-        // Initialize Firebase (if google-services.json is present)
-        try {
-            FirebaseApp.initializeApp(this);
-        } catch (Exception e) {
-            // ignore - app may not have firebase configured
-        }
-
-        permissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestMultiplePermissions(),
-                result -> {
-                    Boolean granted = result.get(Manifest.permission.SEND_SMS);
-                    if (granted != null && granted) {
-                        statusText.setText("Permission granted. You can start the SMS service.");
-                    } else {
-                        statusText.setText("Send SMS permission denied.");
-                    }
-                }
-        );
-
-        startBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (PermissionUtils.hasSendSmsPermission(MainActivity.this)) {
-                    startSmsService();
-                } else {
-                    permissionLauncher.launch(new String[]{Manifest.permission.SEND_SMS});
-                }
+        start.setOnClickListener(v -> {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, SMS_PERMISSION);
+            } else {
+                startService(new Intent(this, SmsService.class));
             }
         });
     }
 
-    private void startSmsService() {
-        statusText.setText("Starting SMS service...");
-        Intent i = new Intent(this, SmsService.class);
-        ContextCompat.startForegroundService(this, i);
-    }
-
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == SMS_PERMISSION && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startService(new Intent(this, SmsService.class));
+        }
     }
 }
