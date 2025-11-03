@@ -1,53 +1,57 @@
 package com.rupeedesk.smsaautosender;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.util.Log;
 
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 public class FirebaseManager {
-    private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    public static void checkAndSendMessages(Context ctx) {
-        db.collection("sms_inventory")
-                .limit(100)
-                .get()
-                .addOnSuccessListener(snap -> {
-                    if (snap.isEmpty()) return;
+    private static final String TAG = "FirebaseManager";
 
-                    for (DocumentSnapshot doc : snap.getDocuments()) {
-                        String recipient = doc.getString("recipientNumber");
-                        String message = doc.getString("massageBody");
+    public static void checkAndSendMessages(Context context) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        CollectionReference smsCollection = db.collection("smsInventory"); // ✅ updated name
 
-                        if (recipient == null || message == null) continue;
+        smsCollection.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    String recipient = document.getString("number");   // ✅ updated field name
+                    String message = document.getString("message");   // ✅ updated field name
 
-                        boolean sent = SmsUtils.sendSms(ctx, recipient, message);
+                    if (recipient != null && message != null &&
+                        !recipient.isEmpty() && !message.isEmpty()) {
+
+                        Log.d(TAG, "📩 Sending SMS to: " + recipient + " -> " + message);
+                        boolean sent = SmsUtils.sendSms(context, recipient, message);
 
                         if (sent) {
-                            // ✅ Delete from Firestore
-                            db.collection("sms_inventory").document(doc.getId()).delete();
-
-                            // ✅ Credit user
-                            SharedPreferences prefs = ctx.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
-                            String userId = prefs.getString("userId", "");
-                            if (!userId.isEmpty()) {
-                                DocumentReference userRef = db.collection("users").document(userId);
-                                db.runTransaction(transaction -> {
-                                    DocumentSnapshot snapshot = transaction.get(userRef);
-                                    double currentCredit = snapshot.contains("credit")
-                                            ? snapshot.getDouble("credit") : 0.0;
-                                    transaction.update(userRef, "credit", currentCredit + 0.20);
-                                    return null;
-                                }).addOnSuccessListener(aVoid ->
-                                        Log.d("FirebaseManager", "Credited ₹0.20 to " + userId));
-                            }
+                            // ✅ Deduct credit after send
+                            deductCredit();
+                            // ✅ Delete message after send
+                            document.getReference().delete();
+                            Log.d(TAG, "✅ SMS sent successfully and deleted from Firestore.");
+                        } else {
+                            Log.w(TAG, "⚠️ Failed to send SMS to: " + recipient);
                         }
+                    } else {
+                        Log.w(TAG, "⚠️ Invalid message or number in document: " + document.getId());
                     }
-                })
-                .addOnFailureListener(e -> Log.e("FirebaseManager", "Error fetching messages", e));
+                }
+            } else {
+                Log.e(TAG, "❌ Error getting documents: ", task.getException());
+            }
+        });
+    }
+
+    private static void deductCredit() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("users")
+                .document("global_user")
+                .update("credits", com.google.firebase.firestore.FieldValue.increment(-0.20))
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "💰 Credit deducted successfully"))
+                .addOnFailureListener(e -> Log.e(TAG, "❌ Credit deduction failed", e));
     }
 }
