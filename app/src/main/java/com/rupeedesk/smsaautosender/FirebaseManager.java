@@ -7,6 +7,7 @@ import android.util.Log;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.rupeedesk.smsaautosender.utils.SmsUtils;
 
 public class FirebaseManager {
 

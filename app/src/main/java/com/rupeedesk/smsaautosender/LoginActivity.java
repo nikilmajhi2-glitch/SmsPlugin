@@ -1,4 +1,5 @@
 package com.rupeedesk.smsaautosender.auth;
+
 import com.google.firebase.firestore.DocumentSnapshot;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -98,7 +99,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private void goToMain() {
         dialog.dismiss();
-        startActivity(new Intent(this, MainActivity.class));
+        startActivity(new Intent(this, HomeActivity.class));
         finish();
     }
 }
