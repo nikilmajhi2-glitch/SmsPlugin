@@ -6,7 +6,7 @@ namespace "com.rupeedesk.smsaautosender" // ✅ FIX for Gradle 8+
 compileSdkVersion 33
 
 defaultConfig {
-applicationId "com.example.smsaautosender"
+applicationId "com.rupeedesk.smsaautosender"
 minSdkVersion 21
 targetSdkVersion 33
 versionCode 1
