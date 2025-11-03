@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'
 
 android {
-namespace "com.example.smsaautosender" // ✅ FIX for Gradle 8+
+namespace "com.rupeedesk.smsaautosender" // ✅ FIX for Gradle 8+
 compileSdkVersion 33
 
 defaultConfig {
