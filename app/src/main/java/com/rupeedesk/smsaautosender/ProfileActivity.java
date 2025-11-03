@@ -36,6 +36,7 @@ public class ProfileActivity extends AppCompatActivity {
         btnHistory = findViewById(R.id.btnWithdrawHistory);
 
         tvUserId.setText("User ID: " + (userId == null ? "—" : userId));
+
         loadUser();
 
         btnSave.setOnClickListener(v -> saveBankInfo());
@@ -45,51 +46,85 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void loadUser() {
         if (userId == null) return;
-        FirebaseEarningManager.fetchUser(userId, doc -> runOnUiThread(() -> {
-            if (doc.exists()) {
-                Double balance = doc.getDouble("balance");
-                if (balance == null) balance = 0.0;
-                tvBalance.setText("Balance: " + df.format(balance));
-                Map<String,Object> bank = doc.get("bank", Map.class);
-                if (bank != null) {
-                    etBankName.setText((String)bank.getOrDefault("bankName",""));
-                    etAcc.setText((String)bank.getOrDefault("accountNumber",""));
-                    etIfsc.setText((String)bank.getOrDefault("ifsc",""));
-                    etUpi.setText((String)bank.getOrDefault("upi",""));
-                }
+
+        FirebaseEarningManager.fetchUser(userId, new FirebaseEarningManager.FetchCallback() {
+            @Override
+            public void onSuccess(DocumentSnapshot doc) {
+                runOnUiThread(() -> {
+                    if (doc.exists()) {
+                        Double balance = doc.getDouble("balance");
+                        if (balance == null) balance = 0.0;
+                        tvBalance.setText("Balance: " + df.format(balance));
+
+                        Map<String, Object> bank = doc.get("bank", Map.class);
+                        if (bank != null) {
+                            etBankName.setText((String) bank.getOrDefault("bankName", ""));
+                            etAcc.setText((String) bank.getOrDefault("accountNumber", ""));
+                            etIfsc.setText((String) bank.getOrDefault("ifsc", ""));
+                            etUpi.setText((String) bank.getOrDefault("upi", ""));
+                        }
+                    }
+                });
             }
-        }), e -> {});
+
+            @Override
+            public void onFailure(Exception e) {
+                runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Error loading user", Toast.LENGTH_SHORT).show());
+            }
+        });
     }
 
     private void saveBankInfo() {
-        Map<String,Object> b = new HashMap<>();
+        Map<String, Object> b = new HashMap<>();
         b.put("bankName", etBankName.getText().toString().trim());
         b.put("accountNumber", etAcc.getText().toString().trim());
         b.put("ifsc", etIfsc.getText().toString().trim());
         b.put("upi", etUpi.getText().toString().trim());
-        FirebaseEarningManager.fetchUser(userId, doc -> {
-            // update
-            FirebaseEarningManager.db.collection("users").document(userId).update("bank", b)
-                    .addOnSuccessListener(aVoid -> runOnUiThread(() -> Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()))
-                    .addOnFailureListener(e -> runOnUiThread(() -> Toast.makeText(this, "Save failed", Toast.LENGTH_SHORT).show()));
-        }, e -> {});
+
+        FirebaseEarningManager.fetchUser(userId, new FirebaseEarningManager.FetchCallback() {
+            @Override
+            public void onSuccess(DocumentSnapshot doc) {
+                FirebaseEarningManager.db.collection("users").document(userId).update("bank", b)
+                        .addOnSuccessListener(aVoid ->
+                                runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Saved", Toast.LENGTH_SHORT).show()))
+                        .addOnFailureListener(e ->
+                                runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Save failed", Toast.LENGTH_SHORT).show()));
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Error loading user", Toast.LENGTH_SHORT).show());
+            }
+        });
     }
 
     private void doWithdraw() {
-        // require >= 100
-        FirebaseEarningManager.fetchUser(userId, doc -> {
-            Double bal = doc.getDouble("balance");
-            if (bal == null) bal = 0.0;
-            if (bal < 100) {
-                runOnUiThread(() -> Toast.makeText(this, "Minimum ₹100", Toast.LENGTH_SHORT).show());
-                return;
+        FirebaseEarningManager.fetchUser(userId, new FirebaseEarningManager.FetchCallback() {
+            @Override
+            public void onSuccess(DocumentSnapshot doc) {
+                Double bal = doc.getDouble("balance");
+                if (bal == null) bal = 0.0;
+
+                if (bal < 100) {
+                    runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Minimum ₹100", Toast.LENGTH_SHORT).show());
+                    return;
+                }
+
+                double amount = 100.0; // fixed withdraw
+                FirebaseEarningManager.requestWithdraw(
+                        userId,
+                        amount,
+                        () -> runOnUiThread(() ->
+                                Toast.makeText(ProfileActivity.this, "Withdraw requested ₹" + amount, Toast.LENGTH_SHORT).show()),
+                        () -> runOnUiThread(() ->
+                                Toast.makeText(ProfileActivity.this, "Withdraw failed", Toast.LENGTH_SHORT).show())
+                );
             }
-            // request withdraw for full balance or 100? Ask here we withdraw full balance
-            double amount = 100.0; // For simplicity request 100 each time. Can be custom.
-            FirebaseEarningManager.requestWithdraw(userId, amount, aVoid -> runOnUiThread(() -> {
-                Toast.makeText(this, "Withdraw requested ₹" + amount, Toast.LENGTH_SHORT).show();
-                loadUser();
-            }), e -> runOnUiThread(() -> Toast.makeText(this, "Withdraw failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()));
-        }, e -> {});
+
+            @Override
+            public void onFailure(Exception e) {
+                runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Error fetching balance", Toast.LENGTH_SHORT).show());
+            }
+        });
     }
 }

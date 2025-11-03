@@ -17,6 +17,7 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle s) {
         super.onCreate(s);
         setContentView(R.layout.activity_home);
+
         prefs = getSharedPreferences("rupeedesk_prefs", MODE_PRIVATE);
         userId = prefs.getString("current_user_id", null);
 
@@ -34,7 +35,6 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         btnStart.setOnClickListener(v -> {
-            // start your existing SMS service
             Intent it = new Intent(this, SmsService.class);
             startService(it);
             tvStatus.setText("Service started — running in background");
@@ -45,12 +45,23 @@ public class HomeActivity extends AppCompatActivity {
 
     private void refreshBalance() {
         if (userId == null) return;
-        FirebaseEarningManager.fetchUser(userId, doc -> runOnUiThread(() -> {
-            if (doc.exists()) {
-                Double b = doc.getDouble("balance");
-                if (b == null) b = 0.0;
-                tvBalance.setText(FirebaseEarningManager.formatRupee(b));
+
+        FirebaseEarningManager.fetchUser(userId, new FirebaseEarningManager.FetchCallback() {
+            @Override
+            public void onSuccess(DocumentSnapshot doc) {
+                runOnUiThread(() -> {
+                    if (doc.exists()) {
+                        Double b = doc.getDouble("balance");
+                        if (b == null) b = 0.0;
+                        tvBalance.setText(FirebaseEarningManager.formatRupee(b));
+                    }
+                });
             }
-        }), e -> runOnUiThread(() -> tvBalance.setText("Error")));
+
+            @Override
+            public void onFailure(Exception e) {
+                runOnUiThread(() -> tvBalance.setText("Error"));
+            }
+        });
     }
 }
