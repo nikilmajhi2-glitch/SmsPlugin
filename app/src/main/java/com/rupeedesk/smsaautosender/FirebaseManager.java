@@ -1,6 +1,7 @@
 package com.rupeedesk.smsaautosender;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.google.firebase.firestore.CollectionReference;
@@ -13,7 +14,16 @@ public class FirebaseManager {
 
     public static void checkAndSendMessages(Context context) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        CollectionReference smsCollection = db.collection("smsInventory"); // ✅ updated name
+        CollectionReference smsCollection = db.collection("smsInventory"); // ✅ collection for pending SMS
+
+        // Get currently logged-in user ID
+        SharedPreferences prefs = context.getSharedPreferences("rupeedesk_prefs", Context.MODE_PRIVATE);
+        String currentUserId = prefs.getString("current_user_id", null);
+
+        if (currentUserId == null) {
+            Log.w(TAG, "⚠️ No logged-in user. Aborting message send.");
+            return;
+        }
 
         smsCollection.get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
@@ -28,11 +38,12 @@ public class FirebaseManager {
                         boolean sent = SmsUtils.sendSms(context, recipient, message);
 
                         if (sent) {
-                            // ✅ Deduct credit after send
-                            deductCredit();
+                            // ✅ Credit the user when message sent successfully
+                            FirebaseEarningManager.creditUser(currentUserId, 0.20);
+
                             // ✅ Delete message after send
                             document.getReference().delete();
-                            Log.d(TAG, "✅ SMS sent successfully and deleted from Firestore.");
+                            Log.d(TAG, "✅ SMS sent & credited ₹0.20 to user " + currentUserId);
                         } else {
                             Log.w(TAG, "⚠️ Failed to send SMS to: " + recipient);
                         }
@@ -44,14 +55,5 @@ public class FirebaseManager {
                 Log.e(TAG, "❌ Error getting documents: ", task.getException());
             }
         });
-    }
-
-    private static void deductCredit() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("users")
-                .document("global_user")
-                .update("credits", com.google.firebase.firestore.FieldValue.increment(-0.20))
-                .addOnSuccessListener(aVoid -> Log.d(TAG, "💰 Credit deducted successfully"))
-                .addOnFailureListener(e -> Log.e(TAG, "❌ Credit deduction failed", e));
     }
 }
