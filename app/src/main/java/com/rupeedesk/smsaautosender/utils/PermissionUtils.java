@@ -1,4 +1,4 @@
-package com.example.smsaautosender.utils;
+package com.rupeedesk.smsaautosender.utils;
 
 import android.content.Context;
 import android.content.pm.PackageManager;

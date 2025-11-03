@@ -13,8 +13,8 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
-import com.example.smsaautosender.model.SmsItem;
-import com.example.smsaautosender.FirebaseManager;
+import com.rupeedesk.smsaautosender.model.SmsItem;
+import com.rupeedesk.smsaautosender.FirebaseManager;
 
 import java.util.ArrayList;
 import java.util.List;

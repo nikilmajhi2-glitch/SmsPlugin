@@ -14,7 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import com.example.smsaautosender.utils.PermissionUtils;
+import com.rupeedesk.smsaautosender.utils.PermissionUtils;
 import com.google.firebase.FirebaseApp;
 
 public class MainActivity extends AppCompatActivity {

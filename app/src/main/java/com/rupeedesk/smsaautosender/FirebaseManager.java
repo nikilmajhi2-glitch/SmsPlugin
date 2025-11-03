@@ -3,7 +3,7 @@ package com.rupeedesk.smsaautosender;
 import android.content.Context;
 import android.util.Log;
 
-import com.example.smsaautosender.model.SmsItem;
+import com.rupeedesk.smsaautosender.model.SmsItem;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
