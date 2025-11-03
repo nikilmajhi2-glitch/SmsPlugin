@@ -7,11 +7,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,7 +23,7 @@ public class WithdrawActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_withdraw);
+        setContentView(R.layout.activity_withdraw); // Ensure this matches your layout file name
 
         etAmount = findViewById(R.id.etAmount);
         btnSubmit = findViewById(R.id.btnSubmit);
