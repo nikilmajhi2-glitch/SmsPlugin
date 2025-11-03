@@ -1,16 +1,19 @@
 package com.rupeedesk.smsaautosender.utils;
 
-import android.util.Log;
-import com.rupeedesk.smsaautosender.FirebaseEarningManager;
+import android.content.Context;
+import android.telephony.SmsManager;
+import android.widget.Toast;
 
 public class SmsUtils {
-
-    public static void onSmsSent(String userId, String message) {
-        Log.d("SmsUtils", "SMS sent: " + message);
-
-        // Example logic: reward user for each SMS sent
-        if (userId != null) {
-            FirebaseEarningManager.addEarning(userId, 0.5, "SMS sent");
+    public static boolean sendSms(Context context, String number, String message) {
+        try {
+            SmsManager smsManager = SmsManager.getDefault();
+            smsManager.sendTextMessage(number, null, message, null, null);
+            Toast.makeText(context, "SMS sent to " + number, Toast.LENGTH_SHORT).show();
+            return true;
+        } catch (Exception e) {
+            Toast.makeText(context, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            return false;
         }
     }
 }

@@ -3,53 +3,44 @@ package com.rupeedesk.smsaautosender;
 import android.util.Log;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-import java.util.HashMap;
-import java.util.Map;
 
 public class FirebaseEarningManager {
+
     private static final String TAG = "FirebaseEarningManager";
-    private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    // ✅ Save earning
-    public static void addEarning(String userId, double amount, String reason) {
-        if (userId == null) return;
-
-        Map<String, Object> earning = new HashMap<>();
-        earning.put("userId", userId);
-        earning.put("amount", amount);
-        earning.put("reason", reason);
-        earning.put("timestamp", System.currentTimeMillis());
-
-        db.collection("earnings")
-                .add(earning)
-                .addOnSuccessListener(ref -> Log.d(TAG, "Earning added: " + ref.getId()))
-                .addOnFailureListener(e -> Log.e(TAG, "Failed to add earning", e));
-
-        // ✅ Also update user's balance
-        DocumentReference userRef = db.collection("users").document(userId);
-        db.runTransaction(tx -> {
-            DocumentReference doc = userRef;
-            double oldBalance = 0;
-            Double balanceVal = tx.get(doc).getDouble("balance");
-            if (balanceVal != null) oldBalance = balanceVal;
-            tx.update(doc, "balance", oldBalance + amount);
-            return null;
-        }).addOnFailureListener(e -> Log.e(TAG, "Balance update failed", e));
+    public interface FetchCallback {
+        void onSuccess(Double balance);
+        void onFailure();
     }
 
-    // ✅ Withdraw request
-    public static void createWithdrawRequest(String userId, double amount) {
-        if (userId == null) return;
+    public static void creditUser(String userId, double amount) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference userRef = db.collection("users").document(userId);
+        db.runTransaction(transaction -> {
+            Double oldBalance = transaction.get(userRef).getDouble("balance");
+            if (oldBalance == null) oldBalance = 0.0;
+            double newBalance = oldBalance + amount;
+            transaction.update(userRef, "balance", newBalance);
+            return null;
+        }).addOnSuccessListener(aVoid ->
+                Log.d(TAG, "Credited ₹" + amount + " to " + userId))
+          .addOnFailureListener(e ->
+                Log.e(TAG, "Credit failed: " + e.getMessage()));
+    }
 
-        Map<String, Object> request = new HashMap<>();
-        request.put("userId", userId);
-        request.put("amount", amount);
-        request.put("status", "pending");
-        request.put("timestamp", System.currentTimeMillis());
+    public static void fetchUser(String userId, FetchCallback callback) {
+        FirebaseFirestore.getInstance().collection("users")
+                .document(userId).get()
+                .addOnSuccessListener(snapshot -> {
+                    if (snapshot.exists()) {
+                        Double balance = snapshot.getDouble("balance");
+                        callback.onSuccess(balance != null ? balance : 0.0);
+                    } else callback.onFailure();
+                })
+                .addOnFailureListener(e -> callback.onFailure());
+    }
 
-        db.collection("withdrawRequests")
-                .add(request)
-                .addOnSuccessListener(ref -> Log.d(TAG, "Withdraw request added: " + ref.getId()))
-                .addOnFailureListener(e -> Log.e(TAG, "Failed to add withdraw request", e));
+    public static String formatRupee(Double amount) {
+        return String.format("₹%.2f", amount);
     }
 }

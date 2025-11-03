@@ -1,5 +1,5 @@
 package com.rupeedesk.smsaautosender.auth;
-
+import com.google.firebase.firestore.DocumentSnapshot;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -10,7 +10,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.rupeedesk.smsaautosender.MainActivity;
+import com.rupeedesk.smsaautosender.HomeActivity;
 import com.rupeedesk.smsaautosender.R;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,7 +69,7 @@ public class LoginActivity extends AppCompatActivity {
                                 });
                     } else {
                         // ✅ Existing user
-                        var doc = query.getDocuments().get(0);
+                        DocumentSnapshot doc = query.getDocuments().get(0);
                         String savedPin = doc.getString("pin");
                         String savedDevice = doc.getString("deviceId");
 

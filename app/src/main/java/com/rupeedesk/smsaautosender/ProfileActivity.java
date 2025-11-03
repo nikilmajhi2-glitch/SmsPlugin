@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.rupeedesk.smsaautosender.R;
 import com.rupeedesk.smsaautosender.auth.LoginActivity;
-import com.rupeedesk.smsaautosender.WithdrawActivity;
 import com.rupeedesk.smsaautosender.WithdrawHistoryActivity;
 
 public class ProfileActivity extends AppCompatActivity {

@@ -20,7 +20,7 @@ public class WithdrawHistoryActivity extends AppCompatActivity {
         setContentView(R.layout.activity_withdraw_history);
 
         // ✅ Fixed ID to match your XML
-        listView = findViewById(R.id.lvWithdraws);
+        listView = findViewById(R.id.listWithdrawHistory);
 
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, withdraws);
         listView.setAdapter(adapter);
